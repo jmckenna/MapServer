@@ -79,7 +79,7 @@ PHP_METHOD(outputFormatObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *)zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *)Z_OBJ_P(zobj TSRMLS_CC);
 
   if ((php_outputformat->outputformat = outputFormatObj_new(driver, name)) == NULL) {
     mapscript_throw_exception("Unable to construct outputFormatObj." TSRMLS_CC);
@@ -103,7 +103,7 @@ PHP_METHOD(outputFormatObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
 
   IF_GET_STRING("name", php_outputformat->outputformat->name)
@@ -136,7 +136,7 @@ PHP_METHOD(outputFormatObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_STRING("name", php_outputformat->outputformat->name, value)
   else IF_SET_STRING("mimetype", php_outputformat->outputformat->mimetype, value)
@@ -174,7 +174,7 @@ PHP_METHOD(outputFormatObj, setOption)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   msSetOutputFormatOption(php_outputformat->outputformat, property, value);
 
@@ -201,7 +201,7 @@ PHP_METHOD(outputFormatObj, getOption)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value = msGetOutputFormatOption(php_outputformat->outputformat, property, "");
 
@@ -226,7 +226,7 @@ PHP_METHOD(outputFormatObj, validate)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status = msOutputFormatValidate(php_outputformat->outputformat, MS_TRUE);
   if (status != MS_TRUE) {
@@ -253,7 +253,7 @@ PHP_METHOD(outputFormatObj, getOptionByIndex)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_outputformat = (php_outputformat_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if (index < 0 || index >= php_outputformat->outputformat->numformatoptions) {
     mapscript_throw_mapserver_exception("Invalid format option index." TSRMLS_CC);
@@ -281,7 +281,7 @@ void mapscript_create_outputformat(outputFormatObj *outputformat, parent_object 
 {
   php_outputformat_object * php_outputformat;
   object_init_ex(return_value, mapscript_ce_outputformat);
-  php_outputformat = (php_outputformat_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_outputformat = (php_outputformat_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_outputformat->outputformat = outputformat;
 
   if (parent.val)
@@ -306,6 +306,23 @@ static void mapscript_outputformat_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_outputformat_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_outputformat_object *php_outputformat;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_outputformat, php_outputformat_object);
+
+  retval = mapscript_object_new(ce, &php_outputformat->std);
+
+  php_outputformat->is_ref = 0;
+  MAPSCRIPT_INIT_PARENT(php_outputformat->parent);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_outputformat_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -321,6 +338,7 @@ static zend_object_value mapscript_outputformat_object_new(zend_class_entry *ce 
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(outputformat)
 {
@@ -331,7 +349,12 @@ PHP_MINIT_FUNCTION(outputformat)
                            mapscript_ce_outputformat,
                            mapscript_outputformat_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_outputformat->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_outputformat->ce_flags |= ZEND_ACC_FINAL_CLASS;
+#endif
 
   return SUCCESS;
 }

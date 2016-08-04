@@ -143,10 +143,10 @@ PHP_METHOD(classObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(zlayer TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(zlayer TSRMLS_CC);
   if (zclass)
-    php_class2 = (php_class_object *) zend_object_store_get_object(zclass TSRMLS_CC);
+    php_class2 = (php_class_object *) Z_OBJ_P(zclass TSRMLS_CC);
 
 
   if ((class = classObj_new(php_layer->layer, (zclass ? php_class2->class:NULL))) == NULL) {
@@ -177,7 +177,7 @@ PHP_METHOD(classObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_STRING("name", php_class->class->name)
   else IF_GET_STRING("title", php_class->class->title)
@@ -213,7 +213,7 @@ PHP_METHOD(classObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   /* special case for "template" which we want to set to NULL and not an empty string */
   if(Z_TYPE_P(value)==IS_NULL && !strcmp(property,"template")) {
@@ -258,8 +258,8 @@ PHP_METHOD(classObj, addLabel)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_label = (php_label_object *) zend_object_store_get_object(zlabel TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_label = (php_label_object *) Z_OBJ_P(zlabel TSRMLS_CC);
 
   status = classObj_addLabel(php_class->class, php_label->label);
   php_label->is_ref = 1;
@@ -287,7 +287,7 @@ PHP_METHOD(classObj, removeLabel)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if ((label = classObj_removeLabel(php_class->class, index)) == NULL) {
     mapscript_report_mapserver_error(E_WARNING TSRMLS_CC);
@@ -318,7 +318,7 @@ PHP_METHOD(classObj, getLabel)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if ((label = classObj_getLabel(php_class->class, index)) == NULL) {
     mapscript_throw_exception("Invalid label index." TSRMLS_CC);
@@ -349,7 +349,7 @@ PHP_METHOD(classObj, updateFromString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status = classObj_updateFromString(php_class->class, snippet);
 
@@ -378,7 +378,7 @@ PHP_METHOD(classObj, convertToString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value =  classObj_convertToString(php_class->class);
 
@@ -408,7 +408,7 @@ PHP_METHOD(classObj, setExpression)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status = classObj_setExpression(php_class->class, expression);
 
@@ -437,7 +437,7 @@ PHP_METHOD(classObj, getExpressionString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value = classObj_getExpressionString(php_class->class);
 
@@ -468,8 +468,8 @@ PHP_METHOD(classObj, setText)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(php_class->parent.val TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(php_class->parent.val TSRMLS_CC);
 
   status = classObj_setText(php_class->class, php_layer->layer, text);
 
@@ -498,7 +498,7 @@ PHP_METHOD(classObj, getTextString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value =  classObj_getTextString(php_class->class);
 
@@ -528,7 +528,7 @@ PHP_METHOD(classObj, getStyle)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if (index < 0 || index >= php_class->class->numstyles) {
     mapscript_throw_exception("Invalid style index." TSRMLS_CC);
@@ -560,8 +560,8 @@ PHP_METHOD(classObj, insertStyle)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_style = (php_style_object *) zend_object_store_get_object(zstyle TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_style = (php_style_object *) Z_OBJ_P(zstyle TSRMLS_CC);
 
   RETURN_LONG(msInsertStyle(php_class->class, php_style->style, index));
 }
@@ -585,7 +585,7 @@ PHP_METHOD(classObj, removeStyle)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   style = msRemoveStyle(php_class->class, index);
 
@@ -615,7 +615,7 @@ PHP_METHOD(classObj, moveStyleUp)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status = classObj_moveStyleUp(php_class->class, index);
 
@@ -643,7 +643,7 @@ PHP_METHOD(classObj, moveStyleDown)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status = classObj_moveStyleDown(php_class->class, index);
 
@@ -669,7 +669,7 @@ PHP_METHOD(classObj, deleteStyle)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status =  classObj_deleteStyle(php_class->class, index);
 
@@ -694,7 +694,7 @@ PHP_METHOD(classObj, getMetaData)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
   CHECK_OBJECT(mapscript_ce_hashtable, php_class->metadata, &php_class->class->metadata);
 
   MAPSCRIPT_CALL_METHOD_1(php_class->metadata, "get", retval, zname);
@@ -720,7 +720,7 @@ PHP_METHOD(classObj, setMetaData)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
   CHECK_OBJECT(mapscript_ce_hashtable, php_class->metadata, &php_class->class->metadata);
 
   MAPSCRIPT_CALL_METHOD_2(php_class->metadata, "set", retval, zname, zvalue);
@@ -746,7 +746,7 @@ PHP_METHOD(classObj, removeMetaData)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
   CHECK_OBJECT(mapscript_ce_hashtable, php_class->metadata, &php_class->class->metadata);
 
   MAPSCRIPT_CALL_METHOD_1(php_class->metadata, "remove", retval, zname);
@@ -774,15 +774,15 @@ PHP_METHOD(classObj, createLegendIcon)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(php_class->parent.val TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(php_class->parent.val TSRMLS_CC);
 
   if (!php_layer->parent.val) {
     mapscript_throw_exception("No map object associated with this class object." TSRMLS_CC);
     return;
   }
 
-  php_map = (php_map_object *) zend_object_store_get_object(php_layer->parent.val TSRMLS_CC);
+  php_map = (php_map_object *) Z_OBJ_P(php_layer->parent.val TSRMLS_CC);
 
   if ((image = classObj_createLegendIcon(php_class->class,
                                          php_map->map,
@@ -820,9 +820,9 @@ PHP_METHOD(classObj, drawLegendIcon)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_image = (php_image_object *) zend_object_store_get_object(zimage TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(php_class->parent.val TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zimage TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(php_class->parent.val TSRMLS_CC);
 
 
   if (!php_layer->parent.val) {
@@ -830,7 +830,7 @@ PHP_METHOD(classObj, drawLegendIcon)
     return;
   }
 
-  php_map = (php_map_object *) zend_object_store_get_object(php_layer->parent.val TSRMLS_CC);
+  php_map = (php_map_object *) Z_OBJ_P(php_layer->parent.val TSRMLS_CC);
 
   if (!MS_RENDERER_PLUGIN(php_image->image->format)) {
     mapscript_report_mapserver_error(E_WARNING TSRMLS_CC);
@@ -865,7 +865,7 @@ PHP_METHOD(classObj, free)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_class = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_class = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   MAPSCRIPT_DELREF(php_class->metadata);
 }
@@ -905,7 +905,7 @@ void mapscript_create_class(classObj *class, parent_object parent, zval *return_
 {
   php_class_object * php_class;
   object_init_ex(return_value, mapscript_ce_class);
-  php_class = (php_class_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_class = (php_class_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_class->class = class;
 
   php_class->parent = parent;
@@ -928,6 +928,28 @@ static void mapscript_class_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_class_object_new_ex(zend_class_entry *ce, php_class_object **ptr)
+{
+  zend_object retval;
+  php_class_object *php_class;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_class, php_class_object);
+
+  retval = mapscript_object_new_ex(ce, &php_class->std);
+
+  if (ptr)
+    *ptr = php_class;
+
+  MAPSCRIPT_INIT_PARENT(php_class->parent);
+
+  php_class->metadata = NULL;
+  php_class->leader = NULL;
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_class_object_new_ex(zend_class_entry *ce, php_class_object **ptr TSRMLS_DC)
 {
   zend_object_value retval;
@@ -949,20 +971,48 @@ static zend_object_value mapscript_class_object_new_ex(zend_class_entry *ce, php
 
   return retval;
 }
+#endif
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_class_object_new(zend_class_entry *ce)
+{
+  return mapscript_class_object_new_ex(ce, NULL);
+}
+#else
 static zend_object_value mapscript_class_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   return mapscript_class_object_new_ex(ce, NULL TSRMLS_CC);
 }
+#endif
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_class_object_clone(zval *zobj TSRMLS_DC)
+{
+  php_class_object *php_class_old, *php_class_new;
+  php_layer_object *php_layer;
+  zend_object new_ov;
+
+  php_class_old = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(php_class_old->parent.val TSRMLS_CC);
+
+  new_ov = mapscript_class_object_new_ex(mapscript_ce_class, &php_class_new TSRMLS_CC);
+  zend_objects_clone_members(&php_class_new->std, &php_class_old->std);
+
+  php_class_new->class = classObj_clone(php_class_old->class, php_layer->layer);
+
+  return new_ov;
+}
+#else
 static zend_object_value mapscript_class_object_clone(zval *zobj TSRMLS_DC)
 {
   php_class_object *php_class_old, *php_class_new;
   php_layer_object *php_layer;
   zend_object_value new_ov;
 
-  php_class_old = (php_class_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(php_class_old->parent.val TSRMLS_CC);
+  php_class_old = (php_class_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(php_class_old->parent.val TSRMLS_CC);
 
   new_ov = mapscript_class_object_new_ex(mapscript_ce_class, &php_class_new TSRMLS_CC);
   zend_objects_clone_members(&php_class_new->std, new_ov, &php_class_old->std, Z_OBJ_HANDLE_P(zobj) TSRMLS_CC);
@@ -971,6 +1021,7 @@ static zend_object_value mapscript_class_object_clone(zval *zobj TSRMLS_DC)
 
   return new_ov;
 }
+#endif
 
 PHP_MINIT_FUNCTION(class)
 {
@@ -984,7 +1035,11 @@ PHP_MINIT_FUNCTION(class)
                            mapscript_ce_class,
                            mapscript_class_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_class->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_class->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

@@ -86,7 +86,7 @@ PHP_METHOD(OWSRequestObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if ((request = cgirequestObj_new()) == NULL) {
     mapscript_throw_mapserver_exception("" TSRMLS_CC);
@@ -112,7 +112,7 @@ PHP_METHOD(OWSRequestObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
 
   IF_GET_LONG("numparams", php_owsrequest->cgirequest->NumParams)
@@ -157,12 +157,18 @@ PHP_METHOD(OWSRequestObj, __set)
 PHP_METHOD(OWSRequestObj, loadParams)
 {
   zval *zobj = getThis();
-  zval **val;
+  zval *val;
   php_owsrequest_object *php_owsrequest;
   void *thread_context;
 
 #ifdef ZTS
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  thread_context = NULL;
+#else
   thread_context = (void*)TSRMLS_C;
+#endif
+
 #else
   thread_context = NULL;
 #endif
@@ -174,7 +180,7 @@ PHP_METHOD(OWSRequestObj, loadParams)
   }
   //PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if ( (STRING_EQUAL(sapi_module.name,"cli")) ||
        (STRING_EQUAL(sapi_module.name,"cgi")) ||
@@ -185,12 +191,22 @@ PHP_METHOD(OWSRequestObj, loadParams)
     if (SG(request_info).request_method &&
         STRING_EQUAL(SG(request_info).request_method, "GET")) {
       zend_is_auto_global("_SERVER", sizeof("_SERVER")-1 TSRMLS_CC);
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+      if ( Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) == IS_ARRAY ) {
+           val = zend_hash_str_find(HASH_OF(&PG(http_globals)[TRACK_VARS_SERVER]), "QUERY_STRING", sizeof("QUERY_STRING")-1);
+           if (val && Z_TYPE_P(val) == IS_STRING && Z_STRLEN_P(val) > 0) {
+		     cgirequestObj_loadParams(php_owsrequest->cgirequest, owsrequest_getenv, NULL, 0, thread_context);
+	       }
+      }
+#else
       if ( PG(http_globals)[TRACK_VARS_SERVER] &&
            (zend_hash_find(PG(http_globals)[TRACK_VARS_SERVER]->value.ht, "QUERY_STRING", sizeof("QUERY_STRING"), (void **) &val) == SUCCESS) &&
            (Z_TYPE_PP(val) == IS_STRING) &&
            (Z_STRLEN_PP(val) > 0) ) {
         cgirequestObj_loadParams(php_owsrequest->cgirequest, owsrequest_getenv, NULL, 0, thread_context);
       }
+#endif
     } else {
 #if PHP_VERSION_ID >= 50600
       php_stream *s = php_stream_temp_new();
@@ -241,7 +257,7 @@ PHP_METHOD(OWSRequestObj, setParameter)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   cgirequestObj_setParameter(php_owsrequest->cgirequest, name, value);
 
@@ -268,7 +284,7 @@ PHP_METHOD(OWSRequestObj, addParameter)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   cgirequestObj_addParameter(php_owsrequest->cgirequest, name, value);
 
@@ -293,7 +309,7 @@ PHP_METHOD(OWSRequestObj, getName)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value = cgirequestObj_getName(php_owsrequest->cgirequest, index);
   if (!value)
@@ -320,7 +336,7 @@ PHP_METHOD(OWSRequestObj, getValue)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value = cgirequestObj_getValue(php_owsrequest->cgirequest, index);
   if (!value)
@@ -348,7 +364,7 @@ PHP_METHOD(OWSRequestObj, getValueByName)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_owsrequest = (php_owsrequest_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value = cgirequestObj_getValueByName(php_owsrequest->cgirequest, name);
   if (!value)
@@ -374,7 +390,7 @@ zend_function_entry owsrequest_functions[] = {
 
 char *owsrequest_getenv(const char *name, void *thread_context)
 {
-  zval **val, **ppzval;
+  zval *val, *ppzval;
   zval *cookie_result, *key;
   HashTable *cookies;
   char *string_key = NULL, *cookie_tmp;
@@ -383,29 +399,34 @@ char *owsrequest_getenv(const char *name, void *thread_context)
   TSRMLS_FETCH_FROM_CTX(thread_context);
 
   if  (STRING_EQUAL(name, "HTTP_COOKIE")) {
-    cookies = PG(http_globals)[TRACK_VARS_COOKIE]->value.ht;
-    MAKE_STD_ZVAL(cookie_result);
+    //cookies = PG(http_globals)[TRACK_VARS_COOKIE]->value.ht;
+    ZVAL_NEW_ARR(cookie_result);
     ZVAL_STRING(cookie_result, "",1);
     for(zend_hash_internal_pointer_reset(cookies);
         zend_hash_has_more_elements(cookies) == SUCCESS;
         zend_hash_move_forward(cookies), ++i) {
       zend_hash_get_current_data(cookies, (void **)&ppzval);
       zend_hash_get_current_key(cookies, &string_key, &num_key, 1);
-      cookie_tmp = malloc((strlen(string_key)+Z_STRLEN_PP(ppzval)+3) * sizeof(char));
-      sprintf(cookie_tmp, "%s=%s;",string_key,Z_STRVAL_PP(ppzval));
-      MAKE_STD_ZVAL(key);
+      cookie_tmp = malloc((strlen(string_key)+Z_STRLEN_P(ppzval)+3) * sizeof(char));
+      sprintf(cookie_tmp, "%s=%s;",string_key,Z_STRVAL_P(ppzval));
+      ZVAL_NEW_ARR(key);
       ZVAL_STRING(key, cookie_tmp,1);
+#if PHP_MAJOR_VERSION >= 7      
+      concat_function(cookie_result,cookie_result, key);
+#else
       add_string_to_string(cookie_result,cookie_result, key);
+#endif
       zval_dtor(key);
       free(cookie_tmp);
     }
     return Z_STRVAL_P(cookie_result);
   } else {
     zend_is_auto_global("_SERVER", sizeof("_SERVER")-1 TSRMLS_CC);
-    if ( PG(http_globals)[TRACK_VARS_SERVER] &&
-         (zend_hash_find(PG(http_globals)[TRACK_VARS_SERVER]->value.ht, name, strlen(name)+1, (void **) &val) == SUCCESS) &&
-         (Z_TYPE_PP(val) == IS_STRING)) {
-      return Z_STRVAL_PP(val);
+    if ( Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) == IS_ARRAY ) {
+         val = zend_hash_str_find(HASH_OF(&PG(http_globals)[TRACK_VARS_SERVER]), name, strlen(name)-1);
+         if (val && Z_TYPE_P(val) == IS_STRING && Z_STRLEN_P(val) > 0) {
+		   return Z_STRVAL_P(val);
+	     }
     }
   }
 
@@ -416,7 +437,7 @@ void mapscript_create_owsrequest(cgiRequestObj *cgirequest, zval *return_value T
 {
   php_owsrequest_object * php_owsrequest;
   object_init_ex(return_value, mapscript_ce_owsrequest);
-  php_owsrequest = (php_owsrequest_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_owsrequest = (php_owsrequest_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_owsrequest->cgirequest = cgirequest;
 }
 
@@ -431,6 +452,19 @@ static void mapscript_owsrequest_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_owsrequest_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_owsrequest_object *php_owsrequest;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_owsrequest, php_owsrequest_object);
+
+  retval = mapscript_object_new(ce, &php_owsrequest->std);
+  return retval;
+}
+#else
 static zend_object_value mapscript_owsrequest_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -442,6 +476,7 @@ static zend_object_value mapscript_owsrequest_object_new(zend_class_entry *ce TS
                                 &mapscript_owsrequest_object_destroy TSRMLS_CC);
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(owsrequest)
 {
@@ -452,7 +487,12 @@ PHP_MINIT_FUNCTION(owsrequest)
                            mapscript_ce_owsrequest,
                            mapscript_owsrequest_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_owsrequest->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_owsrequest->ce_flags |= ZEND_ACC_FINAL_CLASS;
+#endif
 
   return SUCCESS;
 }

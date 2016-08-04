@@ -69,7 +69,7 @@ PHP_METHOD(referenceMapObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_referencemap = (php_referencemap_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_referencemap = (php_referencemap_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_STRING("image", php_referencemap->referencemap->image)
   else IF_GET_LONG("width", php_referencemap->referencemap->width)
@@ -104,7 +104,7 @@ PHP_METHOD(referenceMapObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_referencemap = (php_referencemap_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_referencemap = (php_referencemap_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_STRING("image", php_referencemap->referencemap->image, value)
   else IF_SET_LONG("width", php_referencemap->referencemap->width, value)
@@ -142,7 +142,7 @@ PHP_METHOD(referenceMapObj, updateFromString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_referencemap = (php_referencemap_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_referencemap = (php_referencemap_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status =  referenceMapObj_updateFromString(php_referencemap->referencemap, snippet);
 
@@ -170,7 +170,7 @@ PHP_METHOD(referenceMapObj, convertToString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_referencemap = (php_referencemap_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_referencemap = (php_referencemap_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value =  referenceMapObj_convertToString(php_referencemap->referencemap);
 
@@ -196,7 +196,7 @@ PHP_METHOD(referenceMapObj, free)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_referencemap = (php_referencemap_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_referencemap = (php_referencemap_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   MAPSCRIPT_DELREF(php_referencemap->extent);
   MAPSCRIPT_DELREF(php_referencemap->color);
@@ -220,7 +220,7 @@ void mapscript_create_referencemap(referenceMapObj *referencemap, parent_object 
 {
   php_referencemap_object * php_referencemap;
   object_init_ex(return_value, mapscript_ce_referencemap);
-  php_referencemap = (php_referencemap_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_referencemap = (php_referencemap_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_referencemap->referencemap = referencemap;
 
   php_referencemap->parent = parent;
@@ -243,6 +243,25 @@ static void mapscript_referencemap_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_referencemap_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_referencemap_object *php_referencemap;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_referencemap, php_referencemap_object);
+
+  retval = mapscript_object_new(ce, &php_referencemap->std);
+
+  MAPSCRIPT_INIT_PARENT(php_referencemap->parent);
+  php_referencemap->extent = NULL;
+  php_referencemap->color = NULL;
+  php_referencemap->outlinecolor = NULL;
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_referencemap_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -260,6 +279,7 @@ static zend_object_value mapscript_referencemap_object_new(zend_class_entry *ce 
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(referencemap)
 {
@@ -270,7 +290,11 @@ PHP_MINIT_FUNCTION(referencemap)
                            mapscript_ce_referencemap,
                            mapscript_referencemap_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_referencemap->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_referencemap->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

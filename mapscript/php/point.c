@@ -94,7 +94,7 @@ PHP_METHOD(pointObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_point = (php_point_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   if ((php_point->point = pointObj_new()) == NULL) {
     mapscript_throw_exception("Unable to construct pointObj." TSRMLS_CC);
@@ -125,7 +125,7 @@ PHP_METHOD(pointObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_DOUBLE("x", php_point->point->x)
   else IF_GET_DOUBLE("y", php_point->point->y)
@@ -154,7 +154,7 @@ PHP_METHOD(pointObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_DOUBLE("x", php_point->point->x, value)
   else IF_SET_DOUBLE("y", php_point->point->y, value)
@@ -184,7 +184,7 @@ PHP_METHOD(pointObj, setXY)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   php_point->point->x = x;
   php_point->point->y = y;
@@ -216,7 +216,7 @@ PHP_METHOD(pointObj, setXYZ)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   php_point->point->x = x;
   php_point->point->y = y;
@@ -253,9 +253,9 @@ PHP_METHOD(pointObj, project)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_proj_in = (php_projection_object *) zend_object_store_get_object(zobj_proj_in TSRMLS_CC);
-  php_proj_out = (php_projection_object *) zend_object_store_get_object(zobj_proj_out TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_proj_in = (php_projection_object *) Z_OBJ_P(zobj_proj_in TSRMLS_CC);
+  php_proj_out = (php_projection_object *) Z_OBJ_P(zobj_proj_out TSRMLS_CC);
 
   status = pointObj_project(php_point->point, php_proj_in->projection, php_proj_out->projection);
   if (status != MS_SUCCESS) {
@@ -283,8 +283,8 @@ PHP_METHOD(pointObj, distanceToPoint)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_point2 = (php_point_object *) zend_object_store_get_object(zobj_point2 TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_point2 = (php_point_object *) Z_OBJ_P(zobj_point2 TSRMLS_CC);
 
   distance = pointObj_distanceToPoint(php_point->point, php_point2->point);
 
@@ -311,9 +311,9 @@ PHP_METHOD(pointObj, distanceToLine)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_line_point = (php_point_object *) zend_object_store_get_object(zobj_line_point TSRMLS_CC);
-  php_line_point2 = (php_point_object *) zend_object_store_get_object(zobj_line_point2 TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_line_point = (php_point_object *) Z_OBJ_P(zobj_line_point TSRMLS_CC);
+  php_line_point2 = (php_point_object *) Z_OBJ_P(zobj_line_point2 TSRMLS_CC);
 
   distance = pointObj_distanceToLine(php_point->point, php_line_point->point, php_line_point2->point);
 
@@ -339,8 +339,8 @@ PHP_METHOD(pointObj, distanceToShape)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_shape = (php_shape_object *) zend_object_store_get_object(zshape TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_shape = (php_shape_object *) Z_OBJ_P(zshape TSRMLS_CC);
 
   distance = pointObj_distanceToShape(php_point->point, php_shape->shape);
 
@@ -374,10 +374,10 @@ PHP_METHOD(pointObj, draw)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_point = (php_point_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_map = (php_map_object *) zend_object_store_get_object(zmap TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(zlayer TSRMLS_CC);
-  php_image = (php_image_object *) zend_object_store_get_object(zimage TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_map = (php_map_object *) Z_OBJ_P(zmap TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(zlayer TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zimage TSRMLS_CC);
 
   if ((status = pointObj_draw(php_point->point, php_map->map, php_layer->layer, php_image->image,
                               classIndex, text)) != MS_SUCCESS) {
@@ -410,7 +410,7 @@ void mapscript_create_point(pointObj *point, parent_object parent, zval *return_
 {
   php_point_object * php_point;
   object_init_ex(return_value, mapscript_ce_point);
-  php_point = (php_point_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_point = (php_point_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_point->point = point;
 
   if (parent.val)
@@ -435,6 +435,23 @@ static void mapscript_point_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_point_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_point_object *php_point;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_point, php_point_object);
+
+  retval = mapscript_object_new(ce, &php_point->std);
+
+  php_point->is_ref = 0;
+  MAPSCRIPT_INIT_PARENT(php_point->parent);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_point_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -450,6 +467,7 @@ static zend_object_value mapscript_point_object_new(zend_class_entry *ce TSRMLS_
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(point)
 {
@@ -459,8 +477,11 @@ PHP_MINIT_FUNCTION(point)
                            point_functions,
                            mapscript_ce_point,
                            mapscript_point_object_new);
-
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_point->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_point->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

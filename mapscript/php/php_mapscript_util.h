@@ -43,6 +43,8 @@
 #define TSRMLS_CC
 #endif
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID < 70000
 /* Add pseudo refcount macros for PHP version < 5.3 */
 #ifndef Z_REFCOUNT_PP
 
@@ -121,6 +123,7 @@ static zend_always_inline zend_bool zval_set_isref_to_p(zval* pz, zend_bool isre
   return pz->is_ref = isref;
 }
 
+#endif
 #endif
 
 /* PHP >=5.3 replaced ZVAL_DELREF by Z_DELREF_P */
@@ -257,10 +260,14 @@ static zend_always_inline zend_bool zval_set_isref_to_p(zval* pz, zend_bool isre
         internal = Z_LVAL_P(value);             \
     }
 
-
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+zend_object mapscript_object_new(zend_class_entry *ce, zend_object *zobj);
+#else
 zend_object_value mapscript_object_new(zend_object *zobj,
                                        zend_class_entry *ce,
                                        void (*zend_objects_free_object) TSRMLS_DC);
+#endif
 
 int mapscript_extract_associative_array(HashTable *php, char **array);
 

@@ -63,8 +63,8 @@ PHP_METHOD(gridObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_grid = (php_grid_object *) zend_object_store_get_object(getThis() TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(zlayer TSRMLS_CC);
+  php_grid = (php_grid_object *) Z_OBJ_P(getThis() TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(zlayer TSRMLS_CC);
 
   php_layer->layer->connectiontype = MS_GRATICULE;
 
@@ -79,16 +79,16 @@ PHP_METHOD(gridObj, __construct)
   php_grid->grid = (graticuleObj *)php_layer->layer->layerinfo;
 
   if (php_layer->grid && (Z_TYPE_P(php_layer->grid) == IS_OBJECT)) {
-    php_old_grid = (php_grid_object *) zend_object_store_get_object(php_layer->grid TSRMLS_CC);
+    php_old_grid = (php_grid_object *) Z_OBJ_P(php_layer->grid TSRMLS_CC);
     php_old_grid->parent.child_ptr = NULL;
-    zend_objects_store_del_ref(php_layer->grid TSRMLS_CC);
+    //zend_objects_store_del_ref(php_layer->grid TSRMLS_CC);
   }
 
-  MAKE_STD_ZVAL(php_layer->grid);
-  MAPSCRIPT_MAKE_PARENT(zlayer, &php_layer->grid);
+  //MAKE_STD_ZVAL(php_layer->grid);
+  //MAPSCRIPT_MAKE_PARENT(zlayer, php_layer->grid);
   mapscript_create_grid((graticuleObj *)(php_layer->layer->layerinfo), parent, php_layer->grid TSRMLS_CC);
 
-  return_value_ptr = &php_layer->grid;
+  //return_value_ptr = php_layer->grid;
 }
 /* }}} */
 
@@ -107,7 +107,7 @@ PHP_METHOD(gridObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_grid = (php_grid_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_grid = (php_grid_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_DOUBLE("minsubdivide", php_grid->grid->minsubdivides)
   else IF_GET_DOUBLE("maxsubdivide", php_grid->grid->maxsubdivides)
@@ -137,7 +137,7 @@ PHP_METHOD(gridObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_grid = (php_grid_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_grid = (php_grid_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_DOUBLE("minsubdivide", php_grid->grid->minsubdivides, value)
   else IF_SET_DOUBLE("maxsubdivide", php_grid->grid->maxsubdivides, value)
@@ -164,7 +164,7 @@ void mapscript_create_grid(graticuleObj *grid, parent_object parent, zval *retur
 {
   php_grid_object * php_grid;
   object_init_ex(return_value, mapscript_ce_grid);
-  php_grid = (php_grid_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_grid = (php_grid_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_grid->grid = grid;
 
   php_grid->parent = parent;
@@ -184,6 +184,22 @@ static void mapscript_grid_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_grid_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_grid_object *php_grid;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_grid, php_grid_object);
+
+  retval = mapscript_object_new(ce, &php_grid->std);
+
+  MAPSCRIPT_INIT_PARENT(php_grid->parent);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_grid_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -198,6 +214,7 @@ static zend_object_value mapscript_grid_object_new(zend_class_entry *ce TSRMLS_D
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(grid)
 {
@@ -208,7 +225,12 @@ PHP_MINIT_FUNCTION(grid)
                            mapscript_ce_grid,
                            mapscript_grid_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_grid->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_grid->ce_flags |= ZEND_ACC_FINAL_CLASS;
+#endif
 
   return SUCCESS;
 }

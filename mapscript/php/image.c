@@ -81,7 +81,7 @@ PHP_METHOD(imageObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_image = (php_image_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("width", php_image->image->width)
   else IF_GET_LONG("height", php_image->image->height)
@@ -111,7 +111,7 @@ PHP_METHOD(imageObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_image = (php_image_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_STRING("imagepath", php_image->image->imagepath, value)
   else IF_SET_STRING("imageurl", php_image->image->imageurl, value)
@@ -144,7 +144,7 @@ PHP_METHOD(imageObj, saveWebImage)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_image = (php_image_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   imageFilename = msTmpFilename(php_image->image->format->extension);
   imageFile = msBuildPath(path, php_image->image->imagepath, imageFilename);
@@ -194,8 +194,8 @@ PHP_METHOD(imageObj, pasteImage)
   if  (ZEND_NUM_ARGS() == 3)
     mapscript_report_php_error(E_WARNING, "dstX parameter given but not dstY" TSRMLS_CC);
 
-  php_image = (php_image_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_imageSrc = (php_image_object *) zend_object_store_get_object(zimage TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_imageSrc = (php_image_object *) Z_OBJ_P(zimage TSRMLS_CC);
 
   if (!MS_RENDERER_PLUGIN(php_imageSrc->image->format) ||
       !MS_RENDERER_PLUGIN(php_image->image->format)) {
@@ -274,9 +274,9 @@ PHP_METHOD(imageObj, saveImage)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_image = (php_image_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zobj TSRMLS_CC);
   if (zmap)
-    php_map = (php_map_object *) zend_object_store_get_object(zmap TSRMLS_CC);
+    php_map = (php_map_object *) Z_OBJ_P(zmap TSRMLS_CC);
 
   if(filename_len > 0) {
     if ((status = msSaveImage((zmap ? php_map->map:NULL), php_image->image, filename) != MS_SUCCESS)) {
@@ -339,7 +339,7 @@ void mapscript_create_image(imageObj *image, zval *return_value TSRMLS_DC)
 {
   php_image_object * php_image;
   object_init_ex(return_value, mapscript_ce_image);
-  php_image = (php_image_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_image = (php_image_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_image->image = image;
 }
 
@@ -354,6 +354,20 @@ static void mapscript_image_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_image_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_image_object *php_image;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_image, php_image_object);
+
+  retval = mapscript_object_new(ce, &php_image->std);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_image_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -366,6 +380,7 @@ static zend_object_value mapscript_image_object_new(zend_class_entry *ce TSRMLS_
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(image)
 {
@@ -376,7 +391,11 @@ PHP_MINIT_FUNCTION(image)
                            mapscript_ce_image,
                            mapscript_image_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_image->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_image->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

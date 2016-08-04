@@ -90,7 +90,7 @@ PHP_METHOD(shapeFileObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *)zend_object_store_get_object(zobj TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *)Z_OBJ_P(zobj TSRMLS_CC);
 
   php_shapefile->shapefile = shapefileObj_new(filename, type);
 
@@ -116,7 +116,7 @@ PHP_METHOD(shapeFileObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("numshapes", php_shapefile->shapefile->numshapes)
   else IF_GET_LONG("type", php_shapefile->shapefile->type)
@@ -173,7 +173,7 @@ PHP_METHOD(shapeFileObj, getShape)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   /* Create a new shapeObj to hold the result
    * Note that the type used to create the shape (MS_NULL) does not matter
@@ -213,7 +213,7 @@ PHP_METHOD(shapeFileObj, getPoint)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   /* Create a new shapeObj to hold the result
    * Note that the type used to create the shape (MS_NULL) does not matter
@@ -256,7 +256,7 @@ PHP_METHOD(shapeFileObj, getExtent)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   /* Create a new rectObj to hold the result */
   if ((rect = rectObj_new()) == NULL) {
@@ -293,8 +293,8 @@ PHP_METHOD(shapeFileObj, addShape)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_shape = (php_shape_object *) zend_object_store_get_object(zshape TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_shape = (php_shape_object *) Z_OBJ_P(zshape TSRMLS_CC);
 
   retval = shapefileObj_add(php_shapefile->shapefile, php_shape->shape);
 
@@ -320,8 +320,8 @@ PHP_METHOD(shapeFileObj, addPoint)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_point = (php_point_object *) zend_object_store_get_object(zpoint TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_point = (php_point_object *) Z_OBJ_P(zpoint TSRMLS_CC);
 
   retval = shapefileObj_addPoint(php_shapefile->shapefile, php_point->point);
 
@@ -349,8 +349,8 @@ PHP_METHOD(shapeFileObj, getTransformed)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_map = (php_map_object *) zend_object_store_get_object(zmap TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_map = (php_map_object *) Z_OBJ_P(zmap TSRMLS_CC);
 
   /* Create a new shapeObj to hold the result
    * Note that the type used to create the shape (MS_NULL) does not matter
@@ -389,7 +389,7 @@ PHP_METHOD(shapeFileObj, free)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_shapefile = (php_shapefile_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   MAPSCRIPT_DELREF(php_shapefile->bounds);
 }
@@ -416,7 +416,7 @@ void mapscript_create_shapefile(shapefileObj *shapefile, zval *return_value TSRM
   php_shapefile_object * php_shapefile;
 
   object_init_ex(return_value, mapscript_ce_shapefile);
-  php_shapefile = (php_shapefile_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_shapefile = (php_shapefile_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_shapefile->shapefile = shapefile;
 }
 
@@ -433,6 +433,22 @@ static void mapscript_shapefile_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_shapefile_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_shapefile_object *php_shapefile;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_shapefile, php_shapefile_object);
+
+  retval = mapscript_object_new(ce, &php_shapefile->std);
+
+  php_shapefile->bounds = NULL;
+
+  return retval;
+}
+#else  
 static zend_object_value mapscript_shapefile_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -447,6 +463,7 @@ static zend_object_value mapscript_shapefile_object_new(zend_class_entry *ce TSR
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(shapefile)
 {
@@ -456,8 +473,11 @@ PHP_MINIT_FUNCTION(shapefile)
                            shapefile_functions,
                            mapscript_ce_shapefile,
                            mapscript_shapefile_object_new);
-
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_shapefile->ce_flags |= ZEND_ACC_FINAL;
+#else  
   mapscript_ce_shapefile->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

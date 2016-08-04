@@ -65,7 +65,7 @@ PHP_METHOD(errorObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_error = (php_error_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_error = (php_error_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("code", php_error->error->code)
   else IF_GET_STRING("routine", php_error->error->routine)
@@ -92,7 +92,7 @@ PHP_METHOD(errorObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_error = (php_error_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_error = (php_error_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if ( (STRING_EQUAL("code", property)) ||
        (STRING_EQUAL("routine", property)) ||
@@ -119,7 +119,7 @@ PHP_METHOD(errorObj, next)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_error = (php_error_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_error = (php_error_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if (php_error->error->next == NULL)
     RETURN_NULL();
@@ -138,7 +138,7 @@ PHP_METHOD(errorObj, next)
   php_error->error = php_error->error->next;
   *return_value = *zobj;
   zval_copy_ctor(return_value);
-  INIT_PZVAL(return_value);
+  //INIT_PZVAL(return_value);
 }
 /* }}} */
 
@@ -155,7 +155,7 @@ void mapscript_create_error(errorObj *error, zval *return_value TSRMLS_DC)
 {
   php_error_object * php_error;
   object_init_ex(return_value, mapscript_ce_error);
-  php_error = (php_error_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_error = (php_error_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_error->error = error;
 }
 
@@ -170,6 +170,20 @@ static void mapscript_error_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_error_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_error_object *php_error;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_error, php_error_object);
+
+  retval = mapscript_object_new(ce, &php_error->std);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_error_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -182,6 +196,7 @@ static zend_object_value mapscript_error_object_new(zend_class_entry *ce TSRMLS_
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(error)
 {
@@ -192,7 +207,12 @@ PHP_MINIT_FUNCTION(error)
                            mapscript_ce_error,
                            mapscript_error_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_error->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_error->ce_flags |= ZEND_ACC_FINAL_CLASS;
 
+#endif
   return SUCCESS;
 }

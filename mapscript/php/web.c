@@ -69,7 +69,7 @@ PHP_METHOD(webObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_web = (php_web_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_web = (php_web_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_STRING("log", php_web->web->log)
   else IF_GET_STRING("imagepath", php_web->web->imagepath)
@@ -111,7 +111,7 @@ PHP_METHOD(webObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_web = (php_web_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_web = (php_web_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_STRING("log", php_web->web->log, value)
   else IF_SET_STRING("imagepath", php_web->web->imagepath, value)
@@ -157,7 +157,7 @@ PHP_METHOD(webObj, updateFromString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_web = (php_web_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_web = (php_web_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status =  webObj_updateFromString(php_web->web, snippet);
 
@@ -185,7 +185,7 @@ PHP_METHOD(webObj, convertToString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_web = (php_web_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_web = (php_web_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value =  webObj_convertToString(php_web->web);
 
@@ -211,7 +211,7 @@ PHP_METHOD(webObj, free)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_web = (php_web_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_web = (php_web_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   MAPSCRIPT_DELREF(php_web->extent);
   MAPSCRIPT_DELREF(php_web->metadata);
@@ -235,7 +235,7 @@ void mapscript_create_web(webObj *web, parent_object parent, zval *return_value 
 {
   php_web_object * php_web;
   object_init_ex(return_value, mapscript_ce_web);
-  php_web = (php_web_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_web = (php_web_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_web->web = web;
 
   php_web->parent = parent;
@@ -258,6 +258,25 @@ static void mapscript_web_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_web_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_web_object *php_web;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_web, php_web_object);
+
+  retval = mapscript_object_new(ce, &php_web->std);
+
+  MAPSCRIPT_INIT_PARENT(php_web->parent);
+  php_web->extent = NULL;
+  php_web->metadata = NULL;
+  php_web->validation = NULL;
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_web_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -275,6 +294,7 @@ static zend_object_value mapscript_web_object_new(zend_class_entry *ce TSRMLS_DC
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(web)
 {
@@ -285,7 +305,12 @@ PHP_MINIT_FUNCTION(web)
                            mapscript_ce_web,
                            mapscript_web_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_web->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_web->ce_flags |= ZEND_ACC_FINAL_CLASS;
+#endif
 
   return SUCCESS;
 }

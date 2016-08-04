@@ -44,13 +44,24 @@ zval* mapscript_throw_exception(char *format TSRMLS_DC, ...)
   va_list args;
   char message[MAX_EXCEPTION_MSG];
 #ifdef ZTS
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  va_start(args, format);
+#else 
   va_start(args, TSRMLS_C);
+#endif
+  
 #else
   va_start(args, format);
 #endif
   vsprintf(message, format, args);
   va_end(args);
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000  
+  return zend_throw_exception(mapscript_ce_mapscriptexception, message, 0);
+#else
   return zend_throw_exception(mapscript_ce_mapscriptexception, message, 0 TSRMLS_CC);
+#endif
 }
 
 zval* mapscript_throw_mapserver_exception(char *format TSRMLS_DC, ...)
@@ -69,7 +80,12 @@ zval* mapscript_throw_mapserver_exception(char *format TSRMLS_DC, ...)
   }
 
 #ifdef ZTS
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  va_start(args, format);
+#else
   va_start(args, TSRMLS_C);
+#endif
 #else
   va_start(args, format);
 #endif
@@ -83,7 +99,12 @@ void mapscript_report_php_error(int error_type, char *format TSRMLS_DC, ...)
   va_list args;
   char message[MAX_EXCEPTION_MSG];
 #ifdef ZTS
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  va_start(args, format);
+#else
   va_start(args, TSRMLS_C);
+#endif
 #else
   va_start(args, format);
 #endif

@@ -75,7 +75,7 @@ PHP_METHOD(scalebarObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_scalebar = (php_scalebar_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("height", php_scalebar->scalebar->height)
   else IF_GET_LONG("width", php_scalebar->scalebar->width)
@@ -112,7 +112,7 @@ PHP_METHOD(scalebarObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_scalebar = (php_scalebar_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_LONG("height", php_scalebar->scalebar->height, value)
   else IF_SET_LONG("width", php_scalebar->scalebar->width, value)
@@ -152,7 +152,7 @@ PHP_METHOD(scalebarObj, updateFromString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_scalebar = (php_scalebar_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status =  scalebarObj_updateFromString(php_scalebar->scalebar, snippet);
 
@@ -180,7 +180,7 @@ PHP_METHOD(scalebarObj, convertToString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_scalebar = (php_scalebar_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value =  scalebarObj_convertToString(php_scalebar->scalebar);
 
@@ -208,7 +208,7 @@ PHP_METHOD(scalebarObj, setImageColor)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_scalebar = (php_scalebar_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   if (red < 0 || red > 255 || green < 0 || green > 255 || blue < 0 || blue > 255)
     RETURN_LONG(MS_FAILURE);
@@ -235,7 +235,7 @@ PHP_METHOD(scalebarObj, free)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_scalebar = (php_scalebar_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   MAPSCRIPT_DELREF(php_scalebar->color);
   MAPSCRIPT_DELREF(php_scalebar->backgroundcolor);
@@ -262,7 +262,7 @@ void mapscript_create_scalebar(scalebarObj *scalebar, parent_object parent, zval
 {
   php_scalebar_object * php_scalebar;
   object_init_ex(return_value, mapscript_ce_scalebar);
-  php_scalebar = (php_scalebar_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_scalebar = (php_scalebar_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_scalebar->scalebar = scalebar;
 
   php_scalebar->parent = parent;
@@ -287,6 +287,27 @@ static void mapscript_scalebar_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_scalebar_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_scalebar_object *php_scalebar;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_scalebar, php_scalebar_object);
+
+  retval = mapscript_object_new(ce, &php_scalebar->std);
+
+  MAPSCRIPT_INIT_PARENT(php_scalebar->parent);
+  php_scalebar->color = NULL;
+  php_scalebar->backgroundcolor = NULL;
+  php_scalebar->outlinecolor = NULL;
+  php_scalebar->imagecolor = NULL;
+  php_scalebar->label = NULL;
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_scalebar_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -306,6 +327,7 @@ static zend_object_value mapscript_scalebar_object_new(zend_class_entry *ce TSRM
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(scalebar)
 {
@@ -316,7 +338,11 @@ PHP_MINIT_FUNCTION(scalebar)
                            mapscript_ce_scalebar,
                            mapscript_scalebar_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_scalebar->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_scalebar->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

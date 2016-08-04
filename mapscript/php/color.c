@@ -79,7 +79,7 @@ PHP_METHOD(colorObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_color = (php_color_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_color = (php_color_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("red", php_color->color->red)
   else IF_GET_LONG("green", php_color->color->green)
@@ -106,7 +106,7 @@ PHP_METHOD(colorObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_color = (php_color_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_color = (php_color_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_COLOR("red", php_color->color->red, value)
   else IF_SET_COLOR("green", php_color->color->green, value)
@@ -134,7 +134,7 @@ PHP_METHOD(colorObj, setRGB)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_color = (php_color_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_color = (php_color_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
 
   MS_INIT_COLOR(*(php_color->color), red, green, blue, alpha);
@@ -173,7 +173,7 @@ PHP_METHOD(colorObj, setHex)
       RETURN_LONG(MS_FAILURE);
     }
 
-    php_color = (php_color_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+    php_color = (php_color_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
     MS_INIT_COLOR(*(php_color->color), red, green, blue, alpha);
 
@@ -194,7 +194,7 @@ PHP_METHOD(colorObj, toHex)
   php_color_object *php_color;
   colorObj *color;
 
-  php_color = (php_color_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_color = (php_color_object *) Z_OBJ_P(zobj TSRMLS_CC);
   color = php_color->color;
 
   if (color->red < 0 || color->green < 0 || color->blue < 0) {
@@ -235,7 +235,7 @@ void mapscript_create_color(colorObj *color, parent_object parent, zval *return_
 {
   php_color_object * php_color;
   object_init_ex(return_value, mapscript_ce_color);
-  php_color = (php_color_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_color = (php_color_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_color->color = color;
 
   php_color->parent = parent;
@@ -256,6 +256,23 @@ static void mapscript_color_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_color_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_color_object *php_color;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_color, php_color_object);
+
+  retval = mapscript_object_new(ce, &php_color->std);
+
+  MAPSCRIPT_INIT_PARENT(php_color->parent);
+
+  return retval;
+}
+
+#else
 static zend_object_value mapscript_color_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -270,6 +287,7 @@ static zend_object_value mapscript_color_object_new(zend_class_entry *ce TSRMLS_
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(color)
 {
@@ -280,7 +298,12 @@ PHP_MINIT_FUNCTION(color)
                            mapscript_ce_color,
                            mapscript_color_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_color->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_color->ce_flags |= ZEND_ACC_FINAL_CLASS;
+#endif
 
   return SUCCESS;
 }

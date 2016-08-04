@@ -260,13 +260,11 @@ typedef struct _php_shapefile_object {
   shapefileObj *shapefile;
 } php_shapefile_object;
 
-#ifdef disabled
 typedef struct _php_labelcache_object {
   zend_object std;
   parent_object parent;
   labelCacheObj *labelcache;
 } php_labelcache_object;
-#endif
 
 typedef struct _php_labelleader_object {
   zend_object std;
@@ -458,11 +456,22 @@ extern zend_class_entry *mapscript_ce_map;
 extern zend_class_entry *mapscript_ce_cluster;
 
 /* PHP Object constructors */
+
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+extern zend_object mapscript_object_new(zend_class_entry *ce, zend_object *zobj);
+#else
 extern zend_object_value mapscript_object_new(zend_object *zobj, zend_class_entry *ce,
     void (*zend_objects_free_object) TSRMLS_DC);
+#endif
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+extern zend_object mapscript_object_new_ex(zend_class_entry *ce, zend_object *zobj);
+#else
 extern zend_object_value mapscript_object_new_ex(zend_object *zobj, zend_class_entry *ce,
     void (*zend_objects_free_object),
-    zend_object_handlers *object_handlers TSRMLS_DC);
+    zend_object_handlers *object_handlers TSRMLS_DC);   
+#endif    
 extern void mapscript_fetch_object(zend_class_entry *ce, zval* zval_parent, php_layer_object* layer,
                                    void *internal_object, zval **php_object_storage TSRMLS_DC);
 extern void mapscript_create_color(colorObj *color, parent_object parent, zval *return_value TSRMLS_DC);

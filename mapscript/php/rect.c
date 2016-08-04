@@ -80,7 +80,7 @@ PHP_METHOD(rectObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_rect = (php_rect_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   if ((php_rect->rect = rectObj_new()) == NULL) {
     mapscript_throw_exception("Unable to construct rectObj." TSRMLS_CC);
@@ -104,7 +104,7 @@ PHP_METHOD(rectObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_rect = (php_rect_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_DOUBLE("minx", php_rect->rect->minx)
   else IF_GET_DOUBLE("miny", php_rect->rect->miny)
@@ -141,10 +141,10 @@ PHP_METHOD(rectObj, draw)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_map = (php_map_object *) zend_object_store_get_object(zmap TSRMLS_CC);
-  php_layer = (php_layer_object *) zend_object_store_get_object(zlayer TSRMLS_CC);
-  php_image = (php_image_object *) zend_object_store_get_object(zimage TSRMLS_CC);
+  php_rect = (php_rect_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_map = (php_map_object *) Z_OBJ_P(zmap TSRMLS_CC);
+  php_layer = (php_layer_object *) Z_OBJ_P(zlayer TSRMLS_CC);
+  php_image = (php_image_object *) Z_OBJ_P(zimage TSRMLS_CC);
 
   if ((status = rectObj_draw(php_rect->rect, php_map->map, php_layer->layer, php_image->image,
                              classIndex, text)) != MS_SUCCESS) {
@@ -172,7 +172,7 @@ PHP_METHOD(rectObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_rect = (php_rect_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_DOUBLE("minx", php_rect->rect->minx, value)
   else IF_SET_DOUBLE("miny", php_rect->rect->miny, value)
@@ -202,9 +202,9 @@ PHP_METHOD(rectObj, project)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *) zend_object_store_get_object(zobj TSRMLS_CC);
-  php_proj_in = (php_projection_object *) zend_object_store_get_object(zobj_proj_in TSRMLS_CC);
-  php_proj_out = (php_projection_object *) zend_object_store_get_object(zobj_proj_out TSRMLS_CC);
+  php_rect = (php_rect_object *) Z_OBJ_P(zobj TSRMLS_CC);
+  php_proj_in = (php_projection_object *) Z_OBJ_P(zobj_proj_in TSRMLS_CC);
+  php_proj_out = (php_projection_object *) Z_OBJ_P(zobj_proj_out TSRMLS_CC);
 
   status = rectObj_project(php_rect->rect, php_proj_in->projection, php_proj_out->projection);
   if (status != MS_SUCCESS) {
@@ -231,7 +231,7 @@ PHP_METHOD(rectObj, setExtent)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_rect = (php_rect_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   php_rect->rect->minx = minx;
   php_rect->rect->miny = miny;
@@ -259,7 +259,7 @@ PHP_METHOD(rectObj, fit)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_rect = (php_rect_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   retval = rectObj_fit(php_rect->rect, width, height);
 
@@ -282,7 +282,7 @@ PHP_METHOD(rectObj, getCenter)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_rect = (php_rect_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_rect = (php_rect_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   center = (pointObj *)calloc(1, sizeof(pointObj));
   if (!center) {
@@ -318,7 +318,7 @@ void mapscript_create_rect(rectObj *rect, parent_object parent, zval *return_val
 {
   php_rect_object * php_rect;
   object_init_ex(return_value, mapscript_ce_rect);
-  php_rect = (php_rect_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_rect = (php_rect_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_rect->rect = rect;
 
   if (parent.val)
@@ -343,6 +343,23 @@ static void mapscript_rect_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_rect_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_rect_object *php_rect;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_rect, php_rect_object);
+
+  retval = mapscript_object_new(ce, &php_rect->std);
+
+  php_rect->is_ref = 0;
+  MAPSCRIPT_INIT_PARENT(php_rect->parent)
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_rect_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -358,6 +375,7 @@ static zend_object_value mapscript_rect_object_new(zend_class_entry *ce TSRMLS_D
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(rect)
 {
@@ -368,7 +386,7 @@ PHP_MINIT_FUNCTION(rect)
                            mapscript_ce_rect,
                            mapscript_rect_object_new);
 
-  mapscript_ce_rect->ce_flags |= ZEND_ACC_FINAL_CLASS;
+  mapscript_ce_rect->ce_flags |= ZEND_ACC_FINAL;
 
   return SUCCESS;
 }

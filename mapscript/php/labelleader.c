@@ -63,7 +63,7 @@ PHP_METHOD(labelLeaderObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_labelleader = (php_labelleader_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_labelleader = (php_labelleader_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("maxdistance", php_labelleader->labelleader->maxdistance)
   else IF_GET_LONG("gridstep", php_labelleader->labelleader->gridstep)
@@ -106,7 +106,7 @@ void mapscript_create_labelleader(labelLeaderObj *labelleader, parent_object par
 {
   php_labelleader_object * php_labelleader;
   object_init_ex(return_value, mapscript_ce_labelleader);
-  php_labelleader = (php_labelleader_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_labelleader = (php_labelleader_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_labelleader->labelleader = labelleader;
 
   php_labelleader->parent = parent;
@@ -126,6 +126,22 @@ static void mapscript_labelleader_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_labelleader_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_labelleader_object *php_labelleader;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_labelleader, php_labelleader_object);
+
+  retval = mapscript_object_new(ce, &php_labelleader->std);
+
+  MAPSCRIPT_INIT_PARENT(php_labelleader->parent);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_labelleader_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -140,6 +156,7 @@ static zend_object_value mapscript_labelleader_object_new(zend_class_entry *ce T
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(labelleader)
 {
@@ -150,7 +167,11 @@ PHP_MINIT_FUNCTION(labelleader)
                            mapscript_ce_labelleader,
                            mapscript_labelleader_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_labelleader->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_labelleader->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

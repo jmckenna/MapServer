@@ -62,7 +62,7 @@ PHP_METHOD(resultObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_result = (php_result_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_result = (php_result_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   if ((php_result->result = resultObj_new()) == NULL) {
     mapscript_throw_exception("Unable to construct resultObj." TSRMLS_CC);
@@ -88,7 +88,7 @@ PHP_METHOD(resultObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_result = (php_result_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_result = (php_result_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("shapeindex", php_result->result->shapeindex)
   else IF_GET_LONG("tileindex", php_result->result->tileindex)
@@ -136,7 +136,7 @@ void mapscript_create_result(resultObj *result, parent_object parent,
 {
   php_result_object * php_result;
   object_init_ex(return_value, mapscript_ce_result);
-  php_result = (php_result_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_result = (php_result_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_result->result = result;
 
   php_result->parent = parent;
@@ -156,6 +156,22 @@ static void mapscript_result_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_result_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_result_object *php_result;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_result, php_result_object);
+
+  retval = mapscript_object_new(ce, &php_result->std);
+
+  MAPSCRIPT_INIT_PARENT(php_result->parent);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_result_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -170,6 +186,7 @@ static zend_object_value mapscript_result_object_new(zend_class_entry *ce TSRMLS
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(result)
 {
@@ -180,7 +197,11 @@ PHP_MINIT_FUNCTION(result)
                            mapscript_ce_result,
                            mapscript_result_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_result->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_result->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

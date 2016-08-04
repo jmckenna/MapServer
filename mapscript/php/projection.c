@@ -57,7 +57,7 @@ PHP_METHOD(projectionObj, __construct)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_projection = (php_projection_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_projection = (php_projection_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   if ((php_projection->projection = projectionObj_new(projString)) == NULL) {
     mapscript_throw_mapserver_exception("Unable to construct projectionObj." TSRMLS_CC);
@@ -82,7 +82,7 @@ PHP_METHOD(projectionObj, setWKTProjection)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_projection = (php_projection_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_projection = (php_projection_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   RETURN_LONG(msOGCWKT2ProjectionObj(wkt, php_projection->projection, MS_FALSE));
 }
@@ -101,7 +101,7 @@ PHP_METHOD(projectionObj, getUnits)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_projection = (php_projection_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  php_projection = (php_projection_object *)Z_OBJ_P(getThis() TSRMLS_CC);
 
   RETURN_LONG(projectionObj_getUnits(php_projection->projection));
 }
@@ -120,7 +120,7 @@ void mapscript_create_projection(projectionObj *projection, parent_object parent
 {
   php_projection_object * php_projection;
   object_init_ex(return_value, mapscript_ce_projection);
-  php_projection = (php_projection_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_projection = (php_projection_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_projection->projection = projection;
 
   if (parent.val)
@@ -145,6 +145,26 @@ static void mapscript_projection_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_projection_object_new_ex(zend_class_entry *ce, php_projection_object **ptr)
+{
+  zend_object retval;
+  php_projection_object *php_projection;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_projection, php_projection_object);
+
+  retval = mapscript_object_new_ex(ce, &php_projection->std);
+
+  if (ptr)
+    *ptr = php_projection;
+
+  php_projection->is_ref = 0;
+  MAPSCRIPT_INIT_PARENT(php_projection->parent);
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_projection_object_new_ex(zend_class_entry *ce, php_projection_object **ptr TSRMLS_DC)
 {
   zend_object_value retval;
@@ -164,18 +184,44 @@ static zend_object_value mapscript_projection_object_new_ex(zend_class_entry *ce
 
   return retval;
 }
+#endif
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_projection_object_new(zend_class_entry *ce)
+{
+  return mapscript_projection_object_new_ex(ce, NULL);
+}
+#else
 static zend_object_value mapscript_projection_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   return mapscript_projection_object_new_ex(ce, NULL TSRMLS_CC);
 }
+#endif
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_projection_object_clone(zval *zobj TSRMLS_DC)
+{
+  php_projection_object *php_projection_old, *php_projection_new;
+  zend_object new_ov;
+
+  php_projection_old = (php_projection_object *) Z_OBJ_P(zobj TSRMLS_CC);
+
+  new_ov = mapscript_projection_object_new_ex(mapscript_ce_projection, &php_projection_new);
+  zend_objects_clone_members(&php_projection_new->std, &php_projection_old->std);
+
+  php_projection_new->projection = projectionObj_clone(php_projection_old->projection);
+
+  return new_ov;
+}
+#else
 static zend_object_value mapscript_projection_object_clone(zval *zobj TSRMLS_DC)
 {
   php_projection_object *php_projection_old, *php_projection_new;
   zend_object_value new_ov;
 
-  php_projection_old = (php_projection_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_projection_old = (php_projection_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   new_ov = mapscript_projection_object_new_ex(mapscript_ce_projection, &php_projection_new TSRMLS_CC);
   zend_objects_clone_members(&php_projection_new->std, new_ov, &php_projection_old->std, Z_OBJ_HANDLE_P(zobj) TSRMLS_CC);
@@ -184,6 +230,7 @@ static zend_object_value mapscript_projection_object_clone(zval *zobj TSRMLS_DC)
 
   return new_ov;
 }
+#endif
 
 PHP_MINIT_FUNCTION(projection)
 {
@@ -197,7 +244,12 @@ PHP_MINIT_FUNCTION(projection)
                            mapscript_ce_projection,
                            mapscript_projection_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_projection->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_projection->ce_flags |= ZEND_ACC_FINAL_CLASS;
+#endif
 
   return SUCCESS;
 }

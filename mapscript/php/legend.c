@@ -69,7 +69,7 @@ PHP_METHOD(legendObj, __get)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_legend = (php_legend_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_legend = (php_legend_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_GET_LONG("height", php_legend->legend->height)
   else IF_GET_LONG("width", php_legend->legend->width)
@@ -105,7 +105,7 @@ PHP_METHOD(legendObj, __set)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_legend = (php_legend_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_legend = (php_legend_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   IF_SET_LONG("height", php_legend->legend->height, value)
   else IF_SET_LONG("width", php_legend->legend->width, value)
@@ -144,7 +144,7 @@ PHP_METHOD(legendObj, updateFromString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_legend = (php_legend_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_legend = (php_legend_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   status =  legendObj_updateFromString(php_legend->legend, snippet);
 
@@ -172,7 +172,7 @@ PHP_METHOD(legendObj, convertToString)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_legend = (php_legend_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_legend = (php_legend_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   value =  legendObj_convertToString(php_legend->legend);
 
@@ -198,7 +198,7 @@ PHP_METHOD(legendObj, free)
   }
   PHP_MAPSCRIPT_RESTORE_ERRORS(TRUE);
 
-  php_legend = (php_legend_object *) zend_object_store_get_object(zobj TSRMLS_CC);
+  php_legend = (php_legend_object *) Z_OBJ_P(zobj TSRMLS_CC);
 
   MAPSCRIPT_DELREF(php_legend->outlinecolor);
   MAPSCRIPT_DELREF(php_legend->imagecolor);
@@ -221,7 +221,7 @@ void mapscript_create_legend(legendObj *legend, parent_object parent, zval *retu
 {
   php_legend_object * php_legend;
   object_init_ex(return_value, mapscript_ce_legend);
-  php_legend = (php_legend_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+  php_legend = (php_legend_object *)Z_OBJ_P(return_value TSRMLS_CC);
   php_legend->legend = legend;
 
   php_legend->parent = parent;
@@ -244,6 +244,25 @@ static void mapscript_legend_object_destroy(void *object TSRMLS_DC)
   efree(object);
 }
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+static zend_object mapscript_legend_object_new(zend_class_entry *ce)
+{
+  zend_object retval;
+  php_legend_object *php_legend;
+
+  MAPSCRIPT_ALLOC_OBJECT(php_legend, php_legend_object);
+
+  retval = mapscript_object_new(ce, &php_legend->std);
+
+  MAPSCRIPT_INIT_PARENT(php_legend->parent);
+  php_legend->outlinecolor = NULL;
+  php_legend->imagecolor = NULL;
+  php_legend->label = NULL;
+
+  return retval;
+}
+#else
 static zend_object_value mapscript_legend_object_new(zend_class_entry *ce TSRMLS_DC)
 {
   zend_object_value retval;
@@ -261,6 +280,7 @@ static zend_object_value mapscript_legend_object_new(zend_class_entry *ce TSRMLS
 
   return retval;
 }
+#endif
 
 PHP_MINIT_FUNCTION(legend)
 {
@@ -271,7 +291,11 @@ PHP_MINIT_FUNCTION(legend)
                            mapscript_ce_legend,
                            mapscript_legend_object_new);
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+  mapscript_ce_legend->ce_flags |= ZEND_ACC_FINAL;
+#else
   mapscript_ce_legend->ce_flags |= ZEND_ACC_FINAL_CLASS;
-
+#endif
   return SUCCESS;
 }

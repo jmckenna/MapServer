@@ -31,5 +31,5 @@ PHP_TS_LIB_NAME=php4ts.lib
 # Install directory for PHP5
 #PHP_INSTALL_DIR=c:\php\php5\ext
 # PHP TS library for PHP5
-PHP_TS_LIB_NAME=php5ts.lib
+PHP_TS_LIB_NAME=php7ts.lib
 !ENDIF

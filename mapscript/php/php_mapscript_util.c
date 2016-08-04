@@ -31,7 +31,22 @@
 #include "php_mapscript_util.h"
 #include "../../maperror.h"
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+zend_object mapscript_object_new(zend_class_entry *ce, zend_object *zobj)
+{
+  zend_object  retval;
 
+  zobj->ce = ce;
+  ALLOC_HASHTABLE(zobj->properties);
+  zend_hash_init(zobj->properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+  object_properties_init(zobj, ce);
+  zend_object_std_init(zobj, ce);
+  retval.handlers = &mapscript_std_object_handlers;
+  return retval;
+}
+
+#else
 zend_object_value mapscript_object_new(zend_object *zobj,
                                        zend_class_entry *ce,
                                        void (*zend_objects_free_object) TSRMLS_DC)
@@ -54,7 +69,25 @@ zend_object_value mapscript_object_new(zend_object *zobj,
   retval.handlers = &mapscript_std_object_handlers;
   return retval;
 }
+#endif
 
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000
+
+zend_object mapscript_object_new_ex(zend_class_entry *ce, zend_object *zobj)
+{
+  zend_object retval;
+
+  zobj->ce = ce;
+  ALLOC_HASHTABLE(zobj->properties);
+  zend_hash_init(zobj->properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+  object_properties_init(zobj, ce);
+  zend_object_std_init(zobj, ce);
+  //retval.handlers = object_handlers;
+  return retval;
+}
+
+#else
 zend_object_value mapscript_object_new_ex(zend_object *zobj,
     zend_class_entry *ce,
     void (*zend_objects_free_object),
@@ -78,6 +111,7 @@ zend_object_value mapscript_object_new_ex(zend_object *zobj,
   retval.handlers = object_handlers;
   return retval;
 }
+#endif
 
 int mapscript_extract_associative_array(HashTable *php, char **array)
 {
@@ -94,7 +128,11 @@ int mapscript_extract_associative_array(HashTable *php, char **array)
     switch (zend_hash_get_current_key(php, &string_key, &num_key, 1)) {
       case HASH_KEY_IS_STRING:
         array[i++] = string_key;
+#if PHP_MAJOR_VERSION >= 7              
+        array[i++] = Z_STRVAL_P(*value);
+#else
         array[i++] = Z_STRVAL_PP(value);
+#endif
         break;
     }
   }
@@ -114,7 +152,12 @@ void mapscript_fetch_object(zend_class_entry *ce, zval* zval_parent, php_layer_o
   // create the parent struct
   p.val = zval_parent;
   p.child_ptr = &*php_object_storage;
+//handle changes in PHP 7
+#if PHP_VERSION_ID >= 70000  
+  ZVAL_NEW_ARR(*php_object_storage);
+#else
   MAKE_STD_ZVAL(*php_object_storage);
+#endif
 
   if (ce == mapscript_ce_outputformat)
     mapscript_create_outputformat((outputFormatObj*)internal_object, p, *php_object_storage TSRMLS_CC);
