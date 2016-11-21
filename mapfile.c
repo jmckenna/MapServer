@@ -3709,6 +3709,22 @@ int initLayerCompositer(LayerCompositer *compositer) {
   compositer->filter = NULL;
   return MS_SUCCESS;
 }
+
+int freeLayerCompositers(LayerCompositer * item) {
+  while(item) {
+    LayerCompositer * next = item->next;
+
+    if (item->filter) {
+      msFree(item->filter->filter);
+      msFree(item->filter);
+      }
+    msFree(item);
+
+    item=next;
+    }
+  return MS_SUCCESS;
+}
+
 /*
 ** Initialize, load and free a single layer structure
 */
@@ -3978,6 +3994,8 @@ int freeLayer(layerObj *layer)
       msFree(layer->sortBy.properties[i].item);
   msFree(layer->sortBy.properties);
 
+  freeLayerCompositers(layer->compositer);
+
   return MS_SUCCESS;
 }
 
@@ -4108,7 +4126,11 @@ int loadLayerCompositer(LayerCompositer *compositer) {
       case COMPFILTER:
         compositer->filter = msSmallMalloc(sizeof(CompositingFilter));
         initCompositingFilter(compositer->filter);
-        if(getString(&compositer->filter->filter) == MS_FAILURE) return(MS_FAILURE);
+        if(getString(&compositer->filter->filter) == MS_FAILURE) {
+          msFree(compositer->filter);
+          compositer->filter=NULL;
+          return(MS_FAILURE);
+          }
         break;
       case COMPOP: {
         char *compop=NULL;
@@ -4172,6 +4194,11 @@ int loadLayerCompositer(LayerCompositer *compositer) {
         else {
           msSetError(MS_PARSEERR,"Unknown COMPOP \"%s\"", "loadLayerCompositer()", compop);
           free(compop);
+          if (compositer->filter) {
+            msFree(compositer->filter->filter);
+            msFree(compositer->filter);
+            compositer->filter=NULL;
+            }
           return MS_FAILURE;
         }
         free(compop);
@@ -4180,14 +4207,30 @@ int loadLayerCompositer(LayerCompositer *compositer) {
       case END:
         return MS_SUCCESS;
       case OPACITY:
-        if (getInteger(&(compositer->opacity)) == -1)
+        if (getInteger(&(compositer->opacity)) == -1) {
+          if (compositer->filter) {
+            msFree(compositer->filter->filter);
+            msFree(compositer->filter);
+            compositer->filter=NULL;
+            }
           return MS_FAILURE;
+          }
         if(compositer->opacity<0 || compositer->opacity>100) {
+          if (compositer->filter) {
+            msFree(compositer->filter->filter);
+            msFree(compositer->filter);
+            compositer->filter=NULL;
+            }
           msSetError(MS_PARSEERR,"OPACITY must be between 0 and 100 (line %d)","loadLayerCompositer()",msyylineno);
           return MS_FAILURE;
         }
         break;
       default:
+        if (compositer->filter) {
+          msFree(compositer->filter->filter);
+          msFree(compositer->filter);
+          compositer->filter=NULL;
+          }
         msSetError(MS_IDENTERR, "Parsing error 2 near (%s):(line %d)", "loadLayerCompositer()",  msyystring_buffer, msyylineno );
         return(MS_FAILURE);
     }
@@ -4240,7 +4283,10 @@ int loadLayer(layerObj *layer, mapObj *map)
       case(COMPOSITE): {
         LayerCompositer *compositer = msSmallMalloc(sizeof(LayerCompositer));
         initLayerCompositer(compositer);
-        if(MS_FAILURE == loadLayerCompositer(compositer)) return -1;
+        if(MS_FAILURE == loadLayerCompositer(compositer)) {
+          msFree(compositer);
+          return -1;
+          }
         if(!layer->compositer) {
           layer->compositer = compositer;
         } else {
@@ -4865,7 +4911,7 @@ static void writeLayer(FILE *stream, int indent, layerObj *layer)
   writeNumber(stream, indent, "TOLERANCE", -1, layer->tolerance);
   writeKeyword(stream, indent, "TOLERANCEUNITS", layer->toleranceunits, 7, MS_INCHES, "INCHES", MS_FEET ,"FEET", MS_MILES, "MILES", MS_METERS, "METERS", MS_KILOMETERS, "KILOMETERS", MS_NAUTICALMILES, "NAUTICALMILES", MS_DD, "DD");
   writeKeyword(stream, indent, "TRANSFORM", layer->transform, 10, MS_FALSE, "FALSE", MS_UL, "UL", MS_UC, "UC", MS_UR, "UR", MS_CL, "CL", MS_CC, "CC", MS_CR, "CR", MS_LL, "LL", MS_LC, "LC", MS_LR, "LR");
-  writeKeyword(stream, indent, "TYPE", layer->type, 8, MS_LAYER_POINT, "POINT", MS_LAYER_LINE, "LINE", MS_LAYER_POLYGON, "POLYGON", MS_LAYER_RASTER, "RASTER", MS_LAYER_QUERY, "QUERY", MS_LAYER_CIRCLE, "CIRCLE", MS_LAYER_TILEINDEX, "TILEINDEX", MS_LAYER_CHART, "CHART");
+  writeKeyword(stream, indent, "TYPE", layer->type, 9, MS_LAYER_POINT, "POINT", MS_LAYER_LINE, "LINE", MS_LAYER_POLYGON, "POLYGON", MS_LAYER_RASTER, "RASTER", MS_LAYER_ANNOTATION, "ANNOTATION", MS_LAYER_QUERY, "QUERY", MS_LAYER_CIRCLE, "CIRCLE", MS_LAYER_TILEINDEX, "TILEINDEX", MS_LAYER_CHART, "CHART");
   writeKeyword(stream, indent, "UNITS", layer->units, 9, MS_INCHES, "INCHES", MS_FEET ,"FEET", MS_MILES, "MILES", MS_METERS, "METERS", MS_KILOMETERS, "KILOMETERS", MS_NAUTICALMILES, "NAUTICALMILES", MS_DD, "DD", MS_PIXELS, "PIXELS", MS_PERCENTAGES, "PERCENTATGES");
   writeHashTable(stream, indent, "VALIDATION", &(layer->validation));
 
@@ -6973,11 +7019,14 @@ int msUpdateMapFromURL(mapObj *map, char *variable, char *string)
 
 static void hashTableSubstituteString(hashTableObj *hash, const char *from, const char *to) {
   const char *key, *val;
+  char *new_val;
   key = msFirstKeyFromHashTable(hash);
   while(key != NULL) {
     val = msLookupHashTable(hash, key);
     if(strcasestr(val, from)) {
-      msInsertHashTable(hash, key, msCaseReplaceSubstring(msStrdup(val), from, to));
+      new_val = msCaseReplaceSubstring(msStrdup(val), from, to);
+      msInsertHashTable(hash, key, new_val);
+      msFree(new_val);
     }
     key = msNextKeyFromHashTable(hash, key);
   }
