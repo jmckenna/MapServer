@@ -4,9 +4,8 @@ set -eu
 sudo mv /etc/apt/sources.list.d/pgdg* /tmp
 dpkg -l | grep postgresql
 dpkg -l | grep postgis
-sudo apt-get remove postgresql*
-sudo add-apt-repository -y ppa:ubuntugis/ppa
-sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-testing
+sudo apt-get remove --purge postgresql* libpq-dev libpq5
+sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
 sudo apt-get update
 sudo apt-get install --allow-unauthenticated protobuf-c-compiler libprotobuf-c0-dev bison flex python-lxml libfribidi-dev cmake librsvg2-dev colordiff libpq-dev libpng-dev libjpeg-dev libgif-dev libgeos-dev libfreetype6-dev libfcgi-dev libcurl4-gnutls-dev libcairo2-dev libgdal-dev libproj-dev libxml2-dev python-dev libexempi-dev lcov lftp postgis libharfbuzz-dev gdal-bin ccache curl pyflakes
 sudo apt-get install --allow-unauthenticated libmono-system-drawing4.0-cil mono-mcs
