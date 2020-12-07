@@ -22,6 +22,11 @@ tar xf swig-3.0.12.tar.gz
 cd swig-3.0.12 && ./configure --prefix=/usr && make -j2 && sudo make install
 swig -version
 cd ..
+
+sudo sed -i  's/md5/trust/' /etc/postgresql/10/main/pg_hba.conf
+sudo sed -i  's/peer/trust/' /etc/postgresql/10/main/pg_hba.conf
+sudo service postgresql restart 10
+
 cd msautotest
 pyflakes .
 ./create_postgis_test_data.sh
