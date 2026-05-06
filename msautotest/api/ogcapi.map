@@ -86,6 +86,7 @@
 # RUN_PARMS: ogcapi_cql2_text_ge.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=CTYONLY_>=117" > [RESULT]
 # RUN_PARMS: ogcapi_cql2_text_not.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=NOT Name<>'Rice'" > [RESULT]
 # RUN_PARMS: ogcapi_cql2_text_and_true.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=Name='Rice' AND 1=1" > [RESULT]
+# RUN_PARMS: ogcapi_cql2_text_and_issue_GHSA_v4x2_j2g2_rxwp.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=1=1 AND (1=1 AND 1=0)" > [RESULT]
 # RUN_PARMS: ogcapi_cql2_text_four_and.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=Name='Rice' AND 1=1 AND 1=1 AND 1=1" > [RESULT]
 # RUN_PARMS: ogcapi_cql2_text_and_false.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=Name='Rice' AND 1=0" > [RESULT]
 # RUN_PARMS: ogcapi_cql2_text_or_true.json.txt [MAPSERV] "PATH_INFO=/[MAPFILE]/ogcapi/collections/mn_counties/items" "QUERY_STRING=f=json&filter=Name='Rice' OR 1=1" > [RESULT]
